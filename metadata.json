@@ -1,0 +1,6 @@
+{
+  "name": "Hybrid AI-NWP Forecast Blending System",
+  "description": "SIH26081: Adaptive multi-model forecast blending system combining physical NWP (GFS, ECMWF, NCUM) and AI models (GraphCast, Pangu-Weather) for Indian subdivisions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
