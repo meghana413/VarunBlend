@@ -1,14 +1,36 @@
 import { GoogleGenAI } from "@google/genai";
 
+const GEMINI_MODEL = "gemini-2.5-flash";
+
 let aiClient: GoogleGenAI | null = null;
 
 function getAIClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
+
   if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey });
+    aiClient = new GoogleGenAI({
+      apiKey,
+      vertexai: false,
+      httpOptions: {
+        apiVersion: "v1beta",
+      },
+    });
   }
+
   return aiClient;
+}
+
+function getSafeGeminiErrorMessage(error: any): string {
+  const status = error?.status ?? error?.response?.status;
+  const message =
+    error?.message || error?.error?.message || "Unknown Gemini API error";
+
+  if (typeof message === "string") {
+    return `${status ? `HTTP ${status}: ` : ""}${message}`;
+  }
+
+  return `HTTP ${status ?? "unknown"}: Gemini API request failed`;
 }
 
 export default async function handler(req: any, res: any) {
@@ -40,7 +62,7 @@ export default async function handler(req: any, res: any) {
     if (ai) {
       try {
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: GEMINI_MODEL,
           contents: `You are an expert Chief Meteorologist at the India Meteorological Department (IMD) / MoES.
 Write a crisp, authoritative, professional 3-paragraph Operational Meteorological Diagnostic & Blending Synthesis Bulletin.
 Context:
@@ -70,8 +92,8 @@ Keep the tone scientific, formal, and authoritative. Do not use Markdown formatt
         }
       } catch (geminiError: any) {
         console.warn(
-          "[Gemini Free Tier] Quota exceeded, key inactive, or network issue. Engaging automated meteorological rule fallback:",
-          geminiError?.message || geminiError,
+          "[Gemini API] Request failed. Falling back to IMD operational rule engine.",
+          getSafeGeminiErrorMessage(geminiError),
         );
       }
     }
@@ -90,7 +112,10 @@ OPERATIONAL ADVISORY & MITIGATION: In view of the ${String(alertLevel).toUpperCa
       generatedAt: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error("AI brief generation fatal error:", error);
+    console.error(
+      "AI brief generation fatal error:",
+      getSafeGeminiErrorMessage(error),
+    );
     return res.status(500).json({
       error: "Failed to synthesize bulletin",
       message: error?.message || "Internal server error",
