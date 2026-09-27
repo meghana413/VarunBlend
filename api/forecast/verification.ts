@@ -1,12 +1,15 @@
-import { getVerificationSkillData } from '../../src/utils/blendingEngine';
-import { ForecastVariable } from '../../src/types/weather';
+import { getVerificationSkillData } from "../../src/utils/blendingEngine.ts";
+import { ForecastVariable } from "../../src/types/weather.ts";
 
 export default function handler(req: any, res: any) {
-  res.setHeader('Content-Type', 'application/json');
+  res.setHeader("Content-Type", "application/json");
   // Cache verification metrics at edge for 24 hours
-  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=604800');
+  res.setHeader(
+    "Cache-Control",
+    "s-maxage=86400, stale-while-revalidate=604800",
+  );
 
-  const variable = (req.query?.variable as ForecastVariable) || 'rainfall';
+  const variable = (req.query?.variable as ForecastVariable) || "rainfall";
   const data = getVerificationSkillData(variable);
 
   return res.status(200).json({
@@ -15,7 +18,7 @@ export default function handler(req: any, res: any) {
     summary: {
       averageImprovementOverBestSingle: 18.5,
       threatScoreGain: 0.11,
-      errorDecorrelationFactor: 0.42
-    }
+      errorDecorrelationFactor: 0.42,
+    },
   });
 }
